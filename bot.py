@@ -10,6 +10,7 @@ from database.queris import (
     message_management,
     music_management,
     movie_management,
+    book_management,
 )
 from keyboards import (
     MAIN_USER_KEYBOARD,
@@ -29,61 +30,73 @@ from messages import (
     message_with_fullname,
     send_post_to_admin,
 )
+from var import(
+    BOT_TOKEN,
+    API_ID,
+    API_HASH,
+    MUSIC_CHANNEL_ID,
+    MOVIE_CHANNEL_ID,
+    BOOK_CHANNEL_ID,
+)
 import random
-
-API_ID = config("api_id")
-API_HASH = config("api_hash")
-BOT_TOKEN = config("bot_token")
-MUSIC_CHANNEL_ID = config("music_channel")
-MOVIE_CHANNEL_ID = config("movie_channel")
 
 LIST_OF_ADMINS = [admin.chat_id for admin in admin_management.select_admins()]
 
 bot = Client(
-    "thephysicloverbot",
+    "stanleykubrickbot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
 cli = Client(
-    'lost in spacetime',
+    'Stanley Kubrick',
     api_id=API_ID,
     api_hash=API_HASH
 )
 
 @cli.on_message(filters.channel)
 async def send_message(client, message):
-    chat_id = message.sender_chat.id
-    if str(chat_id) == "-1001610350013":
+    chat_id = str(message.sender_chat.id)
+    if chat_id == MUSIC_CHANNEL_ID:
         if message.audio:
             print(music_management.insert_music(message.id))
-    elif str(chat_id) == "-1001677640158":
+    elif chat_id == MOVIE_CHANNEL_ID:
         print(movie_management.insert_movie(message.id))
+    elif chat_id == BOOK_CHANNEL_ID:
+        print(book_management.insert_book(message.id))
 @cli.on_deleted_messages(filters.channel)
 async def deleted_messages(client, message):
     if type(message) == List:
         for m in message:
-            chat_id = m.chat.id
-            if str(chat_id) == "-1001610350013":
+            chat_id = str(m.chat.id)
+            if chat_id == MUSIC_CHANNEL_ID:
                 music = music_management.select_music_message_id(m.id)
                 print(music)
                 if music:
                     print(music_management.delete_music(music.id))
-            elif str(chat_id) == "-1001677640158":
+            elif chat_id == MOVIE_CHANNEL_ID:
                 movie = movie_management.select_movie_message_id(m.id)
                 if movie:
                     print(movie_management.delete_movie(movie.id))
+            elif chat_id == BOOK_CHANNEL_ID:
+                book = book_management.select_book_message_id(m.id)
+                if book:
+                    print(book_management.delete_book(book.id))
     else:
-        chat_id = message.chat.id
-        if str(chat_id) == "-1001610350013":
+        chat_id = str(message.chat.id)
+        if chat_id == MUSIC_CHANNEL_ID:
             music = music_management.select_music_message_id(message.id)
             print(music)
             if music:
                 print(music_management.delete_music(music.id))
-        elif str(chat_id) == "-1001677640158":
+        elif chat_id == MOVIE_CHANNEL_ID:
             movie = movie_management.select_movie_message_id(message.id)
             if movie:
                 print(movie_management.delete_movie(movie.id))
+        elif chat_id == BOOK_CHANNEL_ID:
+                book = book_management.select_book_message_id(chat_id.id)
+                if book:
+                    print(book_management.delete_book(book.id))
 
 @bot.on_message(filters.command(['start', ]))
 async def start(client, message):
@@ -136,24 +149,27 @@ async def posts(client, message):
         if user_blocked:
             await message.reply_text("شما توسط ادمین بلاک شدید.")
         else:
-            if not admin_status:
+                print(message.text)
                 if message.text == "معرفی موزیک 🎵":
                     musics = music_management.select_all_musics()
+                    print(musics)
                     while True:
                         random_music = random.choice(musics)
                         try:
                             await bot.forward_messages(chat_id, MUSIC_CHANNEL_ID, random_music.message_id)
                             break
-                        except:
+                        except Exception as e:
+                            print(e)
                             continue
-                    try:
-                        musics_id = [music.message_id for music in musics]
-                        musics_channel = [music.id async for music in cli.get_chat_history(chat_id=-1001610350013) if music.audio]
-                        for music in musics_channel:
-                            if music not in musics_id:
-                                print(music_management.insert_music(music))
-                    except:
-                        pass
+                    # try:
+                    #     musics_id = [music.message_id for music in musics]
+                    #     musics_channel = [music.id async for music in cli.get_chat_history(chat_id=MUSIC_CHANNEL_ID) if music.audio]
+                    #     print(musics_channel)
+                    #     for music in musics_channel:
+                    #         if music not in musics_id:
+                    #             print(music_management.insert_music(music))
+                    # except:
+                    #     pass
                     
                 elif message.text == "معرفی فیلم 🎥":
                     movies = movie_management.select_all_movie()
@@ -164,15 +180,34 @@ async def posts(client, message):
                             break
                         except:
                             continue
-                    try:
-                        movie_id = [movie.message_id for movie in movies]
-                        movie_channel = [movie.id async for movie in cli.get_chat_history(chat_id=-1001677640158)]
-                        for movie in movie_channel:
-                            if movie not in movie_id:
-                                print(movie_management.insert_music(movie))
-                    except:
-                        pass
+                    # try:
+                    #     movie_id = [movie.message_id for movie in movies]
+                    #     movie_channel = [movie.id async for movie in cli.get_chat_history(chat_id=MOVIE_CHANNEL_ID)]
+                    #     for movie in movie_channel:
+                    #         if movie not in movie_id:
+                    #             print(movie_management.insert_movie(movie))
+                    # except:
+                    #     pass
 
+                
+                elif message.text == 'معرفی کتاب 📕':
+                    books = book_management.select_all_book()
+                    while True:
+                        random_book = random.choice(books)
+                        try:
+                            await bot.forward_messages(chat_id, BOOK_CHANNEL_ID, random_book.message_id)
+                            break
+                        except:
+                            continue
+                    # try:
+                    #     book_id = [book.message_id for book in books]
+                    #     book_channel = [book.id async for book in cli.get_chat_history(chat_id=BOOK_CHANNEL_ID)]
+                    #     for book in book_channel:
+                    #         if book not in book_id:
+                    #             print(book_management.insert_book(book))
+                    # except:
+                    #     pass
+                
                 else:
                     message_obj = message_management.insert_message(user.id, chat_id, text=message.text)
                     text = send_post_to_admin(chat_id, message_obj[0].id)
