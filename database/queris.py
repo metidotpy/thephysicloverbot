@@ -1,4 +1,4 @@
-from .tables import engine, Session, Base, AdminList, User, Message, Music, Movie
+from .tables import engine, Session, Base, AdminList, User, Message, Music, Movie, Book
 # Admin Session and Management
 class AdminManagement():
     def select_admins(self):
@@ -153,8 +153,37 @@ class MovieManagement():
         except:
             return False
 
+
+class BookManagement():
+    def select_all_book(self):
+        return Session.query(Book).all()
+    
+    def select_book_message_id(self, message_id):
+        return Session.query(Book).filter_by(message_id=message_id).first()
+    
+    def select_book(self, message_id):
+        return Session.query(Book).filter_by(message_id=message_id).first()
+    
+    def insert_book(self, message_id):
+        try:
+            book = Book(message_id=message_id)
+            Session.add(book)
+            Session.commit()
+            return book, True
+        
+        except:
+            return False
+    def delete_book(self, id):
+        try:
+            Session.query(Book).filter_by(id=id).delete()
+            Session.commit()
+            return True
+        except:
+            return False
+
 admin_management = AdminManagement()
 user_management = UserManagement()
 message_management = MessageManagement()
 music_management = MusicManagement()
 movie_management = MovieManagement()
+book_management = BookManagement()
