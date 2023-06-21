@@ -1,5 +1,10 @@
 from sqlalchemy import create_engine, Column, String, Table, Integer, DateTime, Boolean, Text, ForeignKey, func
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import DeclarativeBase
 from decouple import config
 
 USERNAME_DATABASE = config("USERNAME_DATABASE")
@@ -9,9 +14,23 @@ DATABASE_NAME = config("DATABASE_NAME")
 
 url = f"mysql://{USERNAME_DATABASE}:{PASSWORD_DATABASE}@{ADDRESS_DATABASE}/{DATABASE_NAME}"
 
+async def async_main():
+    engine = create_async_engine(
+        url,
+        echo=True
+    )
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    await insert_objects(async_session)
+    await select_and_update_objects
 engine = create_engine(url)
-Base = declarative_base(bind=engine)
-Session = sessionmaker(bind=engine)()
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
+# Base = declarative_base(bind=engine)
+# Session = sessionmaker(bind=engine)()
 
 class AdminList(Base):
     __tablename__ = "admin"
